@@ -36,8 +36,9 @@ const Chat = () => {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
+      const transcript = transcribeAudio(event.results[0][0].transcript);
       console.log('Speech recognition result:', transcript)
+      
       setTranscript(transcript);
     };
 
