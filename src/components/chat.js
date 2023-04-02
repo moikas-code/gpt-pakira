@@ -197,9 +197,9 @@ const Chat = () => {
               rows={3}
             />
             <button type='submit'>Send</button>
-            <button onClick={()=>startSpeechRecognition()}>
+            {/* <button onClick={()=>startSpeechRecognition()}>
               Start speech recognition
-            </button>
+            </button> */}
           </>
         ) : (
           <div>Processing...</div>
