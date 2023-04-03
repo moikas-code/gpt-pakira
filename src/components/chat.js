@@ -28,17 +28,17 @@ const Chat = () => {
   const inputLowerCase = input.toLowerCase();
 
   const startSpeechRecognition = () => {
-    console.log('Starting speech recognition...')
+    console.log('Starting speech recognition...');
     const recognition = new window.webkitSpeechRecognition();
-    
+
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
       const transcript = transcribeAudio(event.results[0][0].transcript);
-      console.log('Speech recognition result:', transcript)
-      
+      console.log('Speech recognition result:', transcript);
+
       setTranscript(transcript);
     };
 
@@ -172,14 +172,137 @@ const Chat = () => {
       <div className='chat-log' ref={chatLogRef}>
         {messages.map((message, index) => (
           <div key={index} className={`message ${message.sender}`}>
-            <img
-              src={
-                message.sender === 'user'
-                  ? 'https://via.placeholder.com/24' // Replace with the user icon URL
-                  : 'https://via.placeholder.com/24' // Replace with the bot icon URL
-              }
-              alt={`${message.sender} icon`}
-            />
+            <div className='icon'>
+              {message.sender === 'user' ? (
+                <img
+                  className='icon'
+                  src={
+                    message.sender === 'user'
+                      ? 'https://via.placeholder.com/24' // Replace with the user icon URL
+                      : 'https://via.placeholder.com/24' // Replace with the bot icon URL
+                  }
+                  alt={`${message.sender} icon`}
+                />
+              ) : (
+                <svg
+                  viewBox='0 0 100 100'
+                  xmlns='http://www.w3.org/2000/svg'>
+                  <circle cx='50' cy='50' r='40' fill='#8BC34A' />
+
+                  <circle cx='38' cy='37' r='10' fill='#FFFFFF' />
+
+                  <circle cx='62' cy='37' r='10' fill='#FFFFFF' />
+
+                  <circle cx='38' cy='38' r='5' fill='#000000' />
+
+                  <circle cx='62' cy='38' r='5' fill='#000000' />
+
+                  <path
+                    d='M 40 60 Q 50 70 60 60'
+                    stroke='#000000'
+                    fill='none'
+                    stroke-width='5'
+                  />
+
+                  <circle cx='50' cy='75' r='7' fill='#F57C00' />
+
+                  <line
+                    x1='50'
+                    y1='70'
+                    x2='50'
+                    y2='80'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <path
+                    d='M 50 85 Q 40 90 50 95 Q 60 90 50 85'
+                    fill='#8D6E63'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <path
+                    d='M 70 40 Q 80 30 75 20 Q 70 30 70 40'
+                    fill='#8D6E63'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <path
+                    d='M 30 40 Q 20 30 25 20 Q 30 30 30 40'
+                    fill='#8D6E63'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <path
+                    d='M 35 55 Q 50 70 65 55 Q 50 65 35 55'
+                    fill='#F57C00'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <rect
+                    x='40'
+                    y='45'
+                    width='20'
+                    height='10'
+                    rx='2'
+                    fill='#8D6E63'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <rect
+                    x='20'
+                    y='50'
+                    width='10'
+                    height='20'
+                    rx='2'
+                    fill='#8D6E63'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <rect
+                    x='70'
+                    y='50'
+                    width='10'
+                    height='20'
+                    rx='2'
+                    fill='#8D6E63'
+                    stroke='#000000'
+                    stroke-width='3'
+                  />
+
+                  <path
+                    d='M 40 30 Q 45 20 50 30 Q 55 20 60 30'
+                    stroke='#000000'
+                    fill='none'
+                    stroke-width='5'
+                  />
+
+                  <circle cx='50' cy='20' r='5' fill='#F44336' />
+
+                  <circle cx='47' cy='18' r='1' fill='#000000' />
+
+                  <circle cx='53' cy='18' r='1' fill='#000000' />
+
+                  <rect
+                    x='46'
+                    y='12'
+                    width='8'
+                    height='3'
+                    rx='1'
+                    fill='#F44336'
+                    stroke='#000000'
+                    stroke-width='1'
+                  />
+                </svg>
+              )}
+            </div>
+
             <div>
               <ReactMarkdown>{message.content}</ReactMarkdown>
             </div>
@@ -238,7 +361,14 @@ const Chat = () => {
           border-radius: 1rem;
           padding: 0.5rem 1rem;
         }
-
+        svg {
+          height: inherit;
+          width: inherit;
+        }
+        .icon {
+          width: 24px;
+          height: 24px;
+        }
         .input-form {
           display: flex;
           padding: 1rem;
@@ -290,11 +420,11 @@ function formatResponse(text) {
     const mathPattern = /((?:[a-zA-Z]+\s*=.*\n)|(?:[a-zA-Z]+\(.*\) = .*\n))/g;
 
     const wrappedCode = text.replace(codePattern, (match) => {
-      return '```\n' + match + '\n```';
+      return '\n' + match + '\n';
     });
 
     const wrappedMath = wrappedCode.replace(mathPattern, (match) => {
-      return '```\n' + match + '\n```';
+      return '\n' + match + '\n';
     });
 
     return wrappedMath;
