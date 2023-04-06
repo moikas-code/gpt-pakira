@@ -1,5 +1,9 @@
 ## Getting Started
 
+
+You will need your own API Key from Open AI
+
+
 First, run the development server:
 
 ```bash
