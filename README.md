@@ -1,7 +1,9 @@
 ## Getting Started
 
 
-You will need your own API Key from Open AI
+You will need your own API Key from Open AI 
+ *** Link to API KEY ***
+https://platform.openai.com/account/api-keys
 
 
 First, run the development server:
