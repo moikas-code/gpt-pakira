@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Next.js Browser Extension Demo",
+  "version": "1.0.0",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "default_locale": "en",
+  "description": "A plain text description",
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}
