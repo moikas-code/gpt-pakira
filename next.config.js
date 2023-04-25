@@ -2,7 +2,6 @@
 // window.self = 'this';
 
 global.self = 'this';
-const withWebpack = require('./webpack.config');
 const nextConfig = {
   reactStrictMode: true,
   webpack: (config, {isServer}) => {

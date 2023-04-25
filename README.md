@@ -1,3 +1,7 @@
+GPT Pakira
+
+> A GPT Powered Browser assistant
+
 ## Getting Started
 
 

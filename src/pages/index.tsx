@@ -27,8 +27,8 @@ const Index = () => {
       <style global jsx>{`
         html,
         body {
-          height: 100%;
-          min-height: 500px;
+          height: 500px;
+          width: 500px;
           margin: 0px !important;
         }
         .nav {

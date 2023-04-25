@@ -5,7 +5,6 @@
   "action": {
     "default_popup": "index.html"
   },
-  "default_locale": "en",
   "description": "A plain text description",
   "permissions": [
     "activeTab"
