@@ -37,7 +37,6 @@
     "dev": "next dev",
     "lint:build": "mv out/_next out/next && sed -i 's/\\\\/_next/\\\\/next/g' out/**.html",
     "build": "next build && next export && npm run lint:build",
-    "prepare": "mv out/_next out/next && cd /out && grep -rl '/_next' * | xargs sed -i 's|/_next|/next|g'",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"

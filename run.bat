@@ -1,2 +1,0 @@
-yarn electron-dev
-pause
