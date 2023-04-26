@@ -30,6 +30,7 @@ const Index = () => {
           height: 500px;
           width: 500px;
           margin: 0px !important;
+          font-family: 'monospace', sans-serif;
         }
         .nav {
           width: 100%;

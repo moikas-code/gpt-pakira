@@ -9,19 +9,18 @@
     "email": "moikapy@moikaslookout.com"
   },
   "watch": {
-    "export": {
+    "build": {
       "patterns": [
+        "src",
+        ".",
         "styles/**",
         "pages/**",
-        "public/**",
-        "helpers/**",
-        "next.config.js"
+        "public/**"
       ],
       "ignore": [
         "out",
         "node_modules",
-        ".next",
-        ".vscode"
+        ".next"
       ],
       "extensions": [
         "js",
@@ -33,13 +32,12 @@
     }
   },
   "scripts": {
-    "watch": "npm-watch",
     "dev": "next dev",
-    "lint:build": "mv out/_next out/next && sed -i 's/\\\\/_next/\\\\/next/g' out/**.html",
-    "build": "next build && next export && npm run lint:build",
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "build:win": "next build && next export && npm run prepare:win",
+    "build": "next build && next export && npm run prepare:mac",
+    "prepare:win": "mv ./out/_next out/assets && sed -i 's/\\/_next/\\/assets/g' ./out/**.html",
+    "prepare:mac": "mv ./out/_next out/assets && sed -i '' 's/\\/_next/\\/assets/g' ./out/*.html",
+    "watch": "npm-watch"
   },
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.2",
@@ -54,6 +52,7 @@
     "electron-is-dev": "^2.0.0",
     "electron-squirrel-startup": "^1.0.0",
     "gpt-3-encoder": "^1.1.4",
+    "langchain": "^0.0.64",
     "next": "13.2.4",
     "next-auth": "^4.20.1",
     "npm-watch": "^0.11.0",
@@ -72,6 +71,8 @@
     "@electron-forge/maker-zip": "^6.1.0",
     "@electron-forge/publisher-github": "^6.1.0",
     "electron": "^23.2.0",
+    "eslint": "8.39.0",
+    "eslint-config-next": "13.3.1",
     "next-transpile-modules": "^10.0.0",
     "webpack": "^5.80.0",
     "webpack-cli": "^5.0.2",

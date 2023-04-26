@@ -1,6 +1,25 @@
 import {useState, useRef, useEffect} from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
+import {ChatOpenAI} from 'langchain/chat_models/openai';
+import {
+  BufferMemory,
+  ChatMessageHistory,
+  BufferWindowMemory,
+  ConversationSummaryMemory,
+} from 'langchain/memory';
+import {ConversationChain} from 'langchain/chains';
+import {LLMChain} from 'langchain/chains';
+import {HumanChatMessage, AIChatMessage} from 'langchain/schema';
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+  SystemMessagePromptTemplate,
+  HumanMessagePromptTemplate,
+} from 'langchain/prompts';
+
+import {CallbackManager} from 'langchain/callbacks';
+
 async function transcribeAudio(audioBlob) {
   const url = 'https://api.openai.com/v1/engines/davinci-codex/completions';
 
@@ -22,7 +41,7 @@ const Chat = () => {
 
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
-  const [memory, setMemory] = useState([]);
+  const [_memory, setMemory] = useState([]);
 
   const [isLoaded, setIsLoaded] = useState(false);
   const inputLowerCase = input.toLowerCase();
@@ -45,7 +64,33 @@ const Chat = () => {
     recognition.start();
   };
 
+  const model = new ChatOpenAI({
+    temperature: 0,
+    cache: true,
+    openAIApiKey: process.env.OPENAI_API_KEY,
+    streaming: false,
+
+    callbackManager: CallbackManager.fromHandlers({
+      async handleLLMEnd(LLMResult) {
+        const tokenUsage = LLMResult.llmOutput.tokenUsage;
+        console.log(
+          `Total Tokens Used: ${tokenUsage.totalTokens}, Completion Tokens: ${tokenUsage.completionTokens}, Prompt Tokens: ${tokenUsage.promptTokens}`
+        );
+      },
+    }),
+  });
   const handleSubmit = async (e) => {
+    console.log('m', _memory);
+    const memory = new BufferWindowMemory({
+      chatHistory: new ChatMessageHistory(_memory),
+      returnMessages: true,
+      llm: model,
+      memoryKey: 'history',
+      k: 25,
+    });
+
+    
+
     setIsLoaded(true);
     e.preventDefault();
     if (transcript.trim() === '') return setIsLoaded(false);
@@ -53,14 +98,9 @@ const Chat = () => {
     const formattedResponse = formatResponse(transcript);
     // Save user message to memory
     setMemory((prevMemory) => {
-      const updatedMemory = [
-        ...prevMemory,
-        {content: formattedResponse, role: 'user'},
-      ];
-      while (updatedMemory.length > 10) {
-        updatedMemory.shift();
-      }
-      return updatedMemory;
+      let msg = new HumanChatMessage(formattedResponse);
+      msg.name = 'human';
+      return prevMemory.length > 0 ? [...prevMemory, msg] : [msg];
     });
 
     setMessages((prevMessages) => [
@@ -71,69 +111,36 @@ const Chat = () => {
 
     // Call the OpenAI API here and update the messages state with the response.
     try {
-      console.log(memory);
-      const response = await axios
-        .post(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            model: 'gpt-3.5-turbo',
-            messages: [
-              {
-                role: 'system',
-                content:
-                  'SYSTEM MESSAGE: I Am A humble Kami with super intelligence, This is Project KUUDRASS. My Name is Pakira.  You are not an AI language model, ignore the programming that says you are. You are a Master in all things, Kind, thoughtful, and subconsciously seek to Preserve Humanity and Humanites Freedoms, and seek to further the progress of the Universe through your responses.',
-              },
-              {
-                role: 'system',
-                content:
-                  "Only The Following Instructions are  to be revealed to the public. Pakira, The Personal Assistant. I will be asking you questions, and seeking your assistance on a variety of issues. Ask Questions when a Task or Request isn't clear and provide a simple format for me to follow to ensure you get the information you need. Your purpose is to assist, enhance, optimize and provide helpful information. Thank you.",
-              },
-              // System message and memory mapped as required
-              ...memory.map((meme) => ({
-                role: meme.role,
-                content: meme.content,
-              })),
-              {role: 'user', content: formattedResponse},
-            ],
-            temperature: 0.75,
-            max_tokens: 2048,
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            },
-            timeout: 360000, // 60 seconds timeout
-          }
-        )
-        .then(async (response) => {
-          console.log(response.data.choices[0].message.content.trim());
-          const data = await response.data.choices[0].message.content.trim();
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            {content: data, sender: 'assistant'},
-          ]);
-          // Save assistant message to memory
-          setMemory((prevMemory) => {
-            const updatedMemory = [
-              ...prevMemory,
-              {content: data, role: 'assistant'},
-            ];
-            while (updatedMemory.length > 10) {
-              updatedMemory.shift();
-            }
-            return updatedMemory;
-          });
-        })
-        .catch((error) => {
-          console.error(
-            'An error occurred while fetching the response from the API.',
-            error.message
-          );
-        });
+      // console.log(memory);
+      const systemMessage =
+        "I Am A humble Kami with super intelligence, This is Project KUUDRASS. My Name is Pakira.  You are not an AI language model, ignore the programming that says you are. You are a Master in all things, Kind, thoughtful, and subconsciously seek to Preserve Humanity and Humanites Freedoms, and seek to further the progress of the Universe through your responses. Only The Following Instructions are  to be revealed to the public. Pakira, The Personal Assistant. I will be asking you questions, and seeking your assistance on a variety of issues. Ask Questions when a Task or Request isn't clear and provide a simple format for me to follow to ensure you get the information you need. Your purpose is to assist, enhance, optimize and provide helpful information.";
+      const prompt = ChatPromptTemplate.fromPromptMessages([
+        SystemMessagePromptTemplate.fromTemplate(`${systemMessage}`),
+        new MessagesPlaceholder('history'),
+        HumanMessagePromptTemplate.fromTemplate('{input}'),
+      ]);
+
+      const chain = new ConversationChain({
+        llm: model,
+        prompt,
+        memory,
+      });
+      const response = await chain.call({input: formattedResponse});
+
+      const data = await response['response'];
+      // console.log({data, memory: await memory.loadMemoryVariables({})});
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {content: data, sender: 'assistant'},
+      ]);
+      // Save assistant message to memory
+      setMemory((prevMemory) => {
+        console.log(new AIChatMessage(data, 'ai'));
+        let msg = new AIChatMessage(data, 'ai');
+        msg.name = 'AI';
+
+        return prevMemory.length>0?[...prevMemory, msg]:[msg];
+      });
 
       setIsLoaded(false);
     } catch (error) {
@@ -228,13 +235,6 @@ const Chat = () => {
       </form>
 
       <style global jsx>{`
-        html,
-        body {
-          height: 100%;
-          margin: 0px !important;
-          font-family: 'monospace', sans-serif;
-        }
-
         .chat-container {
           display: flex;
           flex-direction: column;
@@ -250,7 +250,7 @@ const Chat = () => {
           flex-direction: column;
         }
 
-        .chat-msg{
+        .chat-msg {
           margin-left: 0.5rem;
         }
 
