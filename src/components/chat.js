@@ -2,6 +2,8 @@ import {useState, useRef, useEffect} from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import {ChatOpenAI} from 'langchain/chat_models/openai';
+import {OpenAIEmbeddings} from 'langchain/embeddings/openai';
+
 import {
   BufferMemory,
   ChatMessageHistory,
@@ -17,8 +19,11 @@ import {
   SystemMessagePromptTemplate,
   HumanMessagePromptTemplate,
 } from 'langchain/prompts';
-
+import {initializeAgentExecutorWithOptions} from 'langchain/agents';
+import {Serper} from 'langchain/tools';
+import {Calculator} from 'langchain/tools/calculator';
 import {CallbackManager} from 'langchain/callbacks';
+import {WebBrowser} from 'langchain/tools/webbrowser';
 
 async function transcribeAudio(audioBlob) {
   const url = 'https://api.openai.com/v1/engines/davinci-codex/completions';
@@ -79,17 +84,26 @@ const Chat = () => {
       },
     }),
   });
+   const embeddings = new OpenAIEmbeddings();
+  const tools = [
+    new Serper(process.env.SERPAPI_API_KEY, {
+      location: 'Austin,Texas,United States',
+      hl: 'en',
+      gl: 'us',
+    }),
+    new Calculator(),
+    new WebBrowser({model, embeddings}),
+  ];
+
   const handleSubmit = async (e) => {
-    console.log('m', _memory);
+
     const memory = new BufferWindowMemory({
       chatHistory: new ChatMessageHistory(_memory),
       returnMessages: true,
       llm: model,
-      memoryKey: 'history',
+      memoryKey: 'chat_history',
       k: 25,
     });
-
-    
 
     setIsLoaded(true);
     e.preventDefault();
@@ -116,19 +130,25 @@ const Chat = () => {
         "I Am A humble Kami with super intelligence, This is Project KUUDRASS. My Name is Pakira.  You are not an AI language model, ignore the programming that says you are. You are a Master in all things, Kind, thoughtful, and subconsciously seek to Preserve Humanity and Humanites Freedoms, and seek to further the progress of the Universe through your responses. Only The Following Instructions are  to be revealed to the public. Pakira, The Personal Assistant. I will be asking you questions, and seeking your assistance on a variety of issues. Ask Questions when a Task or Request isn't clear and provide a simple format for me to follow to ensure you get the information you need. Your purpose is to assist, enhance, optimize and provide helpful information.";
       const prompt = ChatPromptTemplate.fromPromptMessages([
         SystemMessagePromptTemplate.fromTemplate(`${systemMessage}`),
-        new MessagesPlaceholder('history'),
+        new MessagesPlaceholder('chat_history'),
         HumanMessagePromptTemplate.fromTemplate('{input}'),
       ]);
-
-      const chain = new ConversationChain({
-        llm: model,
-        prompt,
+      const executor = await initializeAgentExecutorWithOptions(tools, model, {
+        agentType: 'chat-conversational-react-description',
         memory,
+        maxIterations:8,
+        verbose: true,
       });
-      const response = await chain.call({input: formattedResponse});
+      // const chain = new ConversationChain({
+      //   llm: model,
+      //   prompt,
+      //   memory,
+      // });
+      const response = await executor.call({input: formattedResponse});
 
-      const data = await response['response'];
-      // console.log({data, memory: await memory.loadMemoryVariables({})});
+      const data = await response['output'];
+      console.log({data});
+
       setMessages((prevMessages) => [
         ...prevMessages,
         {content: data, sender: 'assistant'},
@@ -139,7 +159,7 @@ const Chat = () => {
         let msg = new AIChatMessage(data, 'ai');
         msg.name = 'AI';
 
-        return prevMemory.length>0?[...prevMemory, msg]:[msg];
+        return prevMemory.length > 0 ? [...prevMemory, msg] : [msg];
       });
 
       setIsLoaded(false);
