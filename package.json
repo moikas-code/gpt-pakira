@@ -9,7 +9,28 @@
     "email": "moikapy@moikaslookout.com"
   },
   "watch": {
-    "build": {
+    "build_win": {
+      "patterns": [
+        "src",
+        ".",
+        "styles/**",
+        "pages/**",
+        "public/**"
+      ],
+      "ignore": [
+        "out",
+        "node_modules",
+        ".next"
+      ],
+      "extensions": [
+        "js",
+        "json",
+        "lock",
+        "tsx",
+        "ts"
+      ]
+    },
+    "build_mac": {
       "patterns": [
         "src",
         ".",
@@ -33,11 +54,12 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build:win": "next build && next export && npm run prepare:win",
-    "build": "next build && next export && npm run prepare:mac",
+    "build_win": "next build && next export && npm run prepare:win",
+    "build_mac": "next build && next export && npm run prepare:mac",
     "prepare:win": "mv ./out/_next out/assets && sed -i 's/\\/_next/\\/assets/g' ./out/**.html",
     "prepare:mac": "mv ./out/_next out/assets && sed -i '' 's/\\/_next/\\/assets/g' ./out/*.html",
-    "watch": "npm-watch"
+    "watch:mac": "npm-watch build_mac",
+    "watch:win": "npm-watch build_win"
   },
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.2",
