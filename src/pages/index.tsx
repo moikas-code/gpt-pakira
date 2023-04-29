@@ -23,14 +23,19 @@ const Index = () => {
   // Render the chatbot UI if the user is logged in
 
   return (
-    <div>
+    <>
       <style global jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        :root {
+          color-scheme: light; /* both supported */
+        }
         html,
         body {
           height: 500px;
           width: 500px;
           margin: 0px !important;
-          font-family: 'monospace', sans-serif;
+          font-family: 'Noto Serif', serif;
+          border-radius: 10px;
         }
         .nav {
           width: 100%;
@@ -45,7 +50,7 @@ const Index = () => {
       <main>
         <Chat />
       </main>
-    </div>
+    </>
   );
 };
 
