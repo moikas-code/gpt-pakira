@@ -30,12 +30,14 @@ const Index = () => {
           color-scheme: light; /* both supported */
         }
         html,
-        body {
-          height: 500px;
+        body,
+        #__next,
+        main {
+          height: 600px;
           width: 500px;
           margin: 0px !important;
           font-family: 'Noto Serif', serif;
-          border-radius: 10px;
+          overflow: hidden;
         }
         .nav {
           width: 100%;

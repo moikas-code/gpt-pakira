@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Next.js Browser Extension Demo",
+  "name": "GPT-Pakira",
   "version": "1.0.0",
   "action": {
     "default_popup": "index.html"
   },
-  "description": "A plain text description",
+  "description": "Digital Assistance powered by Langchain",
   "permissions": [
     "activeTab"
   ],
