@@ -72,7 +72,7 @@
     "browserify-fs": "^1.0.0",
     "cheerio": "^1.0.0-rc.12",
     "gpt-3-encoder": "^1.1.4",
-    "langchain": "^0.0.66",
+    "langchain": "^0.0.68",
     "next": "13.3.1",
     "next-auth": "^4.20.1",
     "npm-watch": "^0.11.0",

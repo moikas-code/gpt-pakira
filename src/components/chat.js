@@ -108,6 +108,7 @@ async function transcribeAudio(audioBlob) {
 
 const Chat = () => {
   const chatLogRef = useRef(null);
+  const [tab_link, setTabLink] = useState('');
   const [transcript, setTranscript] = useState('');
 
   const [input, setInput] = useState('');
@@ -154,13 +155,13 @@ const Chat = () => {
   });
   const embeddings = new OpenAIEmbeddings();
   const tools = [
-    new Serper(process.env.SERPAPI_API_KEY, {
-      location: 'Louisville,Kentucky,United States',
-      hl: 'en',
-      gl: 'us',
-    }),
-    new Calculator(),
+    // new Serper(process.env.SERPAPI_API_KEY, {
+    //   location: 'Louisville,Kentucky,United States',
+    //   hl: 'en',
+    //   gl: 'us',
+    // }),
     new WebBrowser({model, embeddings}),
+    new Calculator(),
   ];
 
   const handleSubmit = async (e) => {
@@ -211,7 +212,10 @@ const Chat = () => {
         verbose: true,
       });
 
-      const response = await executor.call({input: formattedResponse});
+      const response = await executor.call({
+        input: formattedResponse,
+        
+      });
 
       const data = await response['output'];
       console.log({data});
@@ -251,7 +255,7 @@ const Chat = () => {
       if (typeof storedMessages === 'string' && storedMessages.length > 0) {
         console.log(
           'Loading messages from local storage',
-         typeof JSON.parse(storedMessages)
+          typeof JSON.parse(storedMessages)
         );
         setMessages(JSON.parse(storedMessages));
         // setMemory(JSON.parse(storedMessages));
@@ -261,6 +265,17 @@ const Chat = () => {
   };
   useEffect(() => {
     loadMessagesFromLocalStorage();
+    if (typeof chrome !== 'undefined') {
+      console.log('chrome is defined', chrome);
+      async function getCurrentTabUrl() {
+        const tabs = await chrome.tabs.query({active: true});
+        return await tabs[0].url;
+      }
+      getCurrentTabUrl().then((url) => {
+        setTabLink(url);
+      });
+      console.log('?', getCurrentTabUrl());
+    }
   }, []);
 
   useEffect(() => {
