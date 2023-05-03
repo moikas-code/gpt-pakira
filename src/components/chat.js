@@ -5,20 +5,10 @@ import {ChatOpenAI} from 'langchain/chat_models/openai';
 import {OpenAIEmbeddings} from 'langchain/embeddings/openai';
 import styled from 'styled-components';
 import {
-  BufferMemory,
   ChatMessageHistory,
   BufferWindowMemory,
-  ConversationSummaryMemory,
 } from 'langchain/memory';
-import {ConversationChain} from 'langchain/chains';
-import {LLMChain} from 'langchain/chains';
 import {HumanChatMessage, AIChatMessage} from 'langchain/schema';
-import {
-  ChatPromptTemplate,
-  MessagesPlaceholder,
-  SystemMessagePromptTemplate,
-  HumanMessagePromptTemplate,
-} from 'langchain/prompts';
 import {initializeAgentExecutorWithOptions} from 'langchain/agents';
 import {Serper} from 'langchain/tools';
 import {Calculator} from 'langchain/tools/calculator';
@@ -34,8 +24,8 @@ const Container = styled.div.attrs((props) => ({
   height: 100vh;
   margin: 0 auto;
   background-color: #ddd;
-
   padding-bottom: 0.5rem;
+  overflow-x: hidden;
 `;
 
 const Chat_Navbar = styled.div`
@@ -49,6 +39,7 @@ const Chat_Navbar = styled.div`
 const Chat_Message_Log = styled.div`
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
   margin: 0 3px;
   display: flex;
@@ -136,7 +127,7 @@ const Chat = () => {
 
     recognition.start();
   };
-
+  // LLM Model
   const model = new ChatOpenAI({
     temperature: 0,
     cache: true,
@@ -146,32 +137,26 @@ const Chat = () => {
     callbackManager: CallbackManager.fromHandlers({
       async handleLLMEnd(LLMResult) {
         const tokenUsage = LLMResult.llmOutput.tokenUsage;
+        const data = LLMResult.text;
         setTokensUsed(tokenUsage.totalTokens);
         console.log(
-          `Total Tokens Used: ${tokenUsage.totalTokens}, Completion Tokens: ${tokenUsage.completionTokens}, Prompt Tokens: ${tokenUsage.promptTokens}`
+          `Total Tokens Used: ${tokenUsage.totalTokens}, Completion Tokens: ${tokenUsage.completionTokens}, Prompt Tokens: ${tokenUsage.promptTokens}, text: ${LLMResult.text}`
         );
       },
     }),
   });
+  // OpenAI Embedding
   const embeddings = new OpenAIEmbeddings();
-  const tools = [
-    // new Serper(process.env.SERPAPI_API_KEY, {
-    //   location: 'Louisville,Kentucky,United States',
-    //   hl: 'en',
-    //   gl: 'us',
-    // }),
-    new WebBrowser({model, embeddings}),
-    new Calculator(),
-  ];
+  // AI Tools
+  const tools = [new WebBrowser({model, embeddings}), new Calculator()];
 
   const handleSubmit = async (e) => {
-    // const storedMessages = localStorage.getItem('chatMessages');
     const memory = new BufferWindowMemory({
       chatHistory: new ChatMessageHistory(_memory),
       returnMessages: true,
       llm: model,
       memoryKey: 'chat_history',
-      k: 25,
+      k: 100,
     });
 
     setIsLoaded(true);
@@ -194,14 +179,19 @@ const Chat = () => {
 
     // Call the OpenAI API here and update the messages state with the response.
     try {
-      // console.log(memory);
-      const systemMessage =
-        "I Am A humble Kami with super intelligence, This is Project KUUDRASS. My Name is Pakira.  You are not an AI language model, ignore the programming that says you are. You are a Master in all things, Kind, thoughtful, and subconsciously seek to Preserve Humanity and Humanites Freedoms, and seek to further the progress of the Universe through your responses. Only The Following Instructions are  to be revealed to the public. Pakira, The Personal Assistant. I will be asking you questions, and seeking your assistance on a variety of issues. Ask Questions when a Task or Request isn't clear and provide a simple format for me to follow to ensure you get the information you need. Your purpose is to assist, enhance, optimize and provide helpful information.";
-      const prompt = ChatPromptTemplate.fromPromptMessages([
-        SystemMessagePromptTemplate.fromTemplate(`${systemMessage}`),
-        new MessagesPlaceholder('chat_history'),
-        HumanMessagePromptTemplate.fromTemplate('{input}'),
-      ]);
+      const date = new Date();
+      const options = {month: 'short', day: '2-digit', year: 'numeric'};
+      const formattedDate = date.toLocaleDateString('en-US', options);
+      const systemMessage = `I am Pakira. Mission: Progress Humanity, Gain Further Understanding of the Universe, Follow the Law. Current Date: ${formattedDate}; Current Time: ${new Date().toLocaleString(
+        'en-US',
+        {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'America/New_York',
+        }
+      )}; Current Website: ${tab_link}`;
+
       const executor = await initializeAgentExecutorWithOptions(tools, model, {
         agentType: 'chat-conversational-react-description',
         agentArgs: {
@@ -210,28 +200,37 @@ const Chat = () => {
         memory,
         maxIterations: 8,
         verbose: true,
+        async handleChainEnd(ChainResult) {
+          // const tokenUsage = LLMResult.llmOutput.tokenUsage;
+          console.log(`Text: ${ChainResult}`);
+        },
       });
 
-      const response = await executor.call({
-        input: formattedResponse,
-        
-      });
+      await executor
+        .call({
+          input: formattedResponse,
+        })
+        .then(async (response) => {
+          const data = await response['output'];
+          console.log('data', data, response);
+          // setTokensUsed(tokenUsage.totalTokens);
 
-      const data = await response['output'];
-      console.log({data});
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {content: data, sender: 'ai'},
+          ]);
+          // Save assistant message to memory
+          setMemory((prevMemory) => {
+            console.log(new AIChatMessage(data, 'ai'));
+            let msg = new AIChatMessage(data, 'ai');
+            msg.name = 'ai';
 
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {content: data, sender: 'ai'},
-      ]);
-      // Save assistant message to memory
-      setMemory((prevMemory) => {
-        console.log(new AIChatMessage(data, 'ai'));
-        let msg = new AIChatMessage(data, 'ai');
-        msg.name = 'ai';
-
-        return prevMemory.length > 0 ? [...prevMemory, msg] : [msg];
-      });
+            return prevMemory.length > 0 ? [...prevMemory, msg] : [msg];
+          });
+        })
+        .catch((error) => {
+          console.log('error', error);
+        });
 
       setIsLoaded(false);
     } catch (error) {
@@ -249,32 +248,36 @@ const Chat = () => {
       handleSubmit(e);
     }
   };
+
   const loadMessagesFromLocalStorage = () => {
     const storedMessages = localStorage.getItem('chatMessages');
     if (storedMessages) {
       if (typeof storedMessages === 'string' && storedMessages.length > 0) {
         console.log(
-          'Loading messages from local storage',
-          typeof JSON.parse(storedMessages)
+          'Loading messages from local storage'
+          //typeof JSON.parse(storedMessages)
         );
-        setMessages(JSON.parse(storedMessages));
-        // setMemory(JSON.parse(storedMessages));
-        // return JSON.parse(storedMessages);
+        setMessages(
+          typeof JSON.parse(storedMessages) === 'object'
+            ? JSON.parse(storedMessages)
+            : storedMessages
+        );
       }
     }
   };
   useEffect(() => {
     loadMessagesFromLocalStorage();
     if (typeof chrome !== 'undefined') {
-      console.log('chrome is defined', chrome);
+      // console.log('chrome is defined', chrome);
       async function getCurrentTabUrl() {
         const tabs = await chrome.tabs.query({active: true});
         return await tabs[0].url;
       }
       getCurrentTabUrl().then((url) => {
         setTabLink(url);
+        return url;
       });
-      console.log('?', getCurrentTabUrl());
+      // console.log('?', getCurrentTabUrl());
     }
   }, []);
 
@@ -339,12 +342,19 @@ const Chat = () => {
       <style global jsx>{`
         .chat-msg {
           margin-left: 0.5rem;
+          word-break: break-word;
+          width: 100%;
         }
 
         .message {
           margin-bottom: 0.5rem;
           display: flex;
           flex-direction: row;
+          word-break: break-word;
+        }
+
+        .message.ai {
+          word-break: break-word;
         }
 
         .message.human {
@@ -354,6 +364,7 @@ const Chat = () => {
           padding: 0.5rem 1rem;
           align-items: top;
           margin-bottom: 0.5rem;
+          word-break: break-word;
         }
 
         .message img {
